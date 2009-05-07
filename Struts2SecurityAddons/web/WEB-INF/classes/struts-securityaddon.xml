@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+    <constant name="struts.enable.DynamicMethodInvocation" value="false" />
+    <constant name="struts.devMode" value="false" />
+    
+    <package name="struts-securityaddon" abstract="true" extends="struts-default" >
+        <interceptors>
+            <!--  The cachingHeaders interceptor appends the following HTTP Headers to all responses
+			  Pragma: no-cache
+			  Cache-control: no-cache, no-store
+			  Expires: -1 -->
+			<interceptor name="cachingHeadersInterceptor" class="com.nickcoblentz.struts2.interceptors.CachingHeadersInterceptor" />
+
+            <!--  The requireSSL interceptor ensures users have connected to the application
+			  over SSL.  If not, an error is displayed and their session is invalidated. -->
+			<interceptor name="requireSSLInterceptor" class="com.nickcoblentz.struts2.interceptors.RequireSSLInterceptor" />
+
+            <!--  The tokenSession interceptor provides CSRF prevention, however it is initially
+			  disabled for all actions.  In order to use it, one must add the following
+			  within the definition of an action:
+            <action name="SomeName" class="com.SomeActionClass">                
+                <interceptor-ref name="defaultSecurityStackWithAuthentication">
+                    <param name="tokenSession.includeMethods">*</param>
+                </interceptor-ref>
+                End required section
+                <result name="somename">SomePage.jsp</result>
+            </action> -->
+
+			<interceptor-stack name="defaultSecurityStack">
+				<interceptor-ref name="defaultStack" />
+				<interceptor-ref name="cachingHeadersInterceptor" />
+				<interceptor-ref name="requireSSLInterceptor" />
+				<interceptor-ref name="tokenSession">
+					<param name="excludeMethods">*</param>
+				</interceptor-ref>
+			</interceptor-stack>
+		</interceptors>
+
+        <default-interceptor-ref name="defaultSecurityStack" />
+
+		<global-results>						
+            <result name="ssl_required">/CustomError.jsp</result>
+            <result name="invalid.token" type="chain">CustomError</result>
+			<result name="custom_error" type="chain">CustomError</result>
+            <result name="error">CustomError</result>
+            <result name="custom_error">/CustomError.jsp</result>
+		</global-results>
+
+
+		<!-- Provides custom error handling for any issues that aren't explicitly caught -->        
+		<global-exception-mappings>
+			<exception-mapping exception="java.lang.Exception" result="custom_error" />
+		</global-exception-mappings>
+
+        <!-- Error Handling Action.
+        	 It should be excluded from authentication and authorization interceptors -->
+        <action name="CustomError">
+        	<result>/CustomError.jsp</result>
+        </action>
+
+        <!-- This catch all action should be matched last. -->
+        <action name="*">
+            <result>/CustomError.jsp</result>
+        </action>
+    </package>   
+
+</struts>

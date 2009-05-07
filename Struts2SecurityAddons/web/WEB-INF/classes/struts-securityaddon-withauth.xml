@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+    <package name="struts-securityaddon-withauth" abstract="true" extends="struts-securityaddon">
+        <interceptors>
+			<!--  The authentication interceptor ensures users have authenticated
+    		  before allowing access to Actions unless the action is listed
+    		  in the "excludeActions"  -->
+			<interceptor name="authenticationInterceptor" class="com.nickcoblentz.struts2.interceptors.AuthenticationInterceptor" />
+
+            <!-- The roles interceptor ensures users have the proper role and authorization
+		     to access a particular page according to the rules defined in the
+		     "roleActions" parameter. -->
+			<interceptor name="rolesInterceptor" class="com.nickcoblentz.struts2.interceptors.RolesInterceptor" />
+
+			<interceptor-stack name="defaultSecurityStackWithAuthentication">
+				<interceptor-ref name="defaultSecurityStack" />
+
+                <!-- This must include CustomError.
+                     When you authenticate a user, make sure to mark
+                     his or her session as authenticated. For example:
+                     session.put(com.nickcoblentz.struts2.interceptors.AuthenticationInterceptor.authenticationSessionField, new Boolean(true));
+                     -->
+				<interceptor-ref name="authenticationInterceptor">
+					<param name="excludeActions">CustomError</param>
+				</interceptor-ref>
+				<interceptor-ref name="rolesInterceptor">
+                    <!-- This must include *: CustomError, the rest are just examples.
+                         When you authenticate a user, make sure to add his or her role
+                         to the session.  For example:
+                         session.put(com.nickcoblentz.struts2.interceptors.RolesInterceptor.roleSessionField, "manager");
+                    -->
+					<param name="roleActions">*: CustomError;
+						admin: AdminOnly, ManagerAndAdminOnly;
+						manager: ManagerAndAdminOnly;
+						user: UserOnly
+					</param>
+				</interceptor-ref>
+			</interceptor-stack>
+		</interceptors>
+
+		<default-interceptor-ref name="defaultSecurityStackWithAuthentication" />
+
+    	<global-results>
+			<result type="chain" name="authentication_required">CustomError</result>
+			<result type="chain" name="authorization_required">CustomError</result>
+		</global-results>
+    </package>
+
+</struts>
